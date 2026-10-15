@@ -1,0 +1,14 @@
+#!/bin/bash
+set -euo pipefail
+export DMOJ_IN_DOCKER=1 PYTHONUNBUFFERED=1 LANG=C.UTF-8 PYTHONIOENCODING=utf8
+cd /judge
+case "${1:-}" in
+    run) command=(/env/bin/dmoj) ;;
+    cli) command=(/env/bin/dmoj-cli) ;;
+    test) command=(/env/bin/python3 -m dmoj.testsuite testsuite) ;;
+    *) echo 'Usage: run|cli|test [arguments]' >&2; exit 2 ;;
+esac
+shift
+export HOME=/home/judge
+exec setpriv --reuid judge --regid judge --clear-groups /env/bin/python3 \
+    /judge/.docker/launch.py "${command[@]}" "$@"

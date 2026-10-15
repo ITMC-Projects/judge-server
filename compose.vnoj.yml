@@ -1,0 +1,24 @@
+services:
+  judge:
+    image: vnoj/judge-server:local
+    build: .
+    restart: unless-stopped
+    cap_add: [SYS_PTRACE]
+    env_file:
+      - .env
+    environment:
+      DMOJ_JUDGE_NAME: ${DMOJ_JUDGE_NAME:?Set the registered judge name}
+      DMOJ_JUDGE_KEY: ${DMOJ_JUDGE_KEY:?Set the registered judge key}
+    command: [run, vnoj_bridged, -p, "9999", -c, /judge/.docker/judge.yml]
+    volumes:
+      - type: bind
+        source: ${VNOJ_PROBLEMS_DIR:-../ITMC-OJ-docker/dmoj/problems}
+        target: /problems
+        read_only: true
+        bind:
+          create_host_path: false
+    networks: [vnoj]
+networks:
+  vnoj:
+    external: true
+    name: ${VNOJ_NETWORK:-dmoj_db}

@@ -1,2 +1,10 @@
 .git
 *.pyc
+.env
+.env.*
+env*/
+build/
+dist/
+*.egg-info/
+**/__pycache__/
+**/*.so
