@@ -8,3 +8,5 @@ dist/
 *.egg-info/
 **/__pycache__/
 **/*.so
+production/judge.env
+production/config/judge.yml

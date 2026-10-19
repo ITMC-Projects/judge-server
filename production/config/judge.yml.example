@@ -1,0 +1,3 @@
+# Host problem directory is mounted read-only at /problems.
+problem_storage_globs:
+  - /problems/**/

@@ -1,0 +1,34 @@
+services:
+  judge:
+    image: itmc-oj-prod/judge:local
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    stop_grace_period: 120s
+    cap_add: [SYS_PTRACE]
+    environment:
+      DMOJ_JUDGE_NAME: ${DMOJ_JUDGE_NAME:?Run make prod-init and configure judge name}
+      DMOJ_JUDGE_KEY: ${DMOJ_JUDGE_KEY:?Register the generated judge key in OJ}
+    command: [run, "${OJ_BRIDGE_HOST:?Set bridge host}", -p, "${OJ_BRIDGE_PORT:-9999}", -c, /judge/.docker/judge.yml]
+    volumes:
+      - type: bind
+        source: ${OJ_PROBLEMS_DIR:?Set absolute production problem path}
+        target: /problems
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./config/judge.yml
+        target: /judge/.docker/judge.yml
+        read_only: true
+        bind:
+          create_host_path: false
+    networks: [oj]
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "5"}
+networks:
+  oj:
+    external: true
+    name: ${OJ_NETWORK:?Set the production OJ Docker network}

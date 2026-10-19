@@ -68,3 +68,5 @@ java_sandbox/objs/
 
 env*/
 README.rst
+production/judge.env
+production/config/judge.yml
