@@ -57,16 +57,15 @@ make prod-ps
 docker network inspect itmc-oj-prod_db >/dev/null
 ```
 
-User judge trong container cần quyền đọc/traverse thư mục problems. Với thư mục
-gốc mới được OJ prod-init tạo mode 700, quản trị viên cần cho phép traverse/read:
-
-```bash
-chmod 755 ~/ITMC-OJ-docker/dmoj/production/data/problems
-```
-
-Chỉ thực hiện nếu phù hợp chính sách tài khoản trên VPS. Nếu test data phải giữ
-private với user khác, dùng ACL cho UID judge thay vì mở quyền other; xem phần dưới.
-File/test directory bên trong cũng cần quyền đọc/traverse cho judge.
+`make prod-init` tự chuẩn hóa quyền khi thư mục problems đã tồn tại. `make prod`
+và `make prod-restart` luôn chuẩn hóa trước khi start: đường dẫn OJ_PROBLEMS_DIR
+được đặt 755, file production/config/judge.yml đặt 644 và production/judge.env
+giữ 600. Áp dụng đúng đường dẫn cấu hình, không hardcode vị trí checkout, không
+thay đổi nội dung env/config và không chmod đệ quy. Không cần chạy chmod thủ công
+cho lần triển khai sau. Nếu user triển khai không sở hữu file/directory và quyền
+chưa đúng, script dừng với thông báo đường dẫn/mode cần sửa bởi owner.
+File/test directory bên trong vẫn cần quyền đọc/traverse cho UID judge; xem ACL
+bên dưới nếu dữ liệu bên trong dùng quyền riêng tư.
 
 ```bash
 cd ~/judge-server
@@ -80,8 +79,8 @@ Git, chạy `make prod-build` rồi `make prod`.
 
 Trước khi start, script kiểm tra env/Compose, network OJ tồn tại và quyền đọc config,
 problems bằng user judge thật. Container không publish port nào, problems/config
-mount read-only, log rotation 10MB × 5 và restart unless-stopped. Không tự sửa quyền
-trên dữ liệu dùng chung của OJ. Project/image production tách biệt Compose dev.
+mount read-only, log rotation 10MB × 5 và restart unless-stopped. Chỉ sửa quyền của
+bind root problems, không sửa quyền dữ liệu con. Project/image production tách biệt Compose dev.
 
 `make prod` xác nhận process chạy; chưa xác nhận authentication hoặc grading. Kiểm tra
 log runtime self-test, judge online trên OJ và gửi một submission có test data thật.
@@ -133,6 +132,10 @@ OJ, còn judge key/config phải lưu trong kho bảo mật riêng.
 
 ## Kiểm chứng thay đổi
 
+Chạy `python3 scripts/test-production-permissions.py` trên Linux để kiểm tra chmod
+thực tế, giữ nguyên nội dung secret/config và không sửa dữ liệu con.
+Ba test quyền đã pass trên Linux qua BuildKit RUN với Python trong image judge;
+trên Windows, test POSIX được skip, hai test xử lý lỗi/missing path vẫn chạy.
 Chạy `python3 scripts/test-production.py` để kiểm tra initializer giữ nguyên config/key,
 validation từ chối placeholder/key yếu/path thiếu, và Compose contract không publish
 port, mount đúng read-only/network production. `bash -n scripts/prod.sh`, `make`,

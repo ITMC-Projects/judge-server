@@ -27,10 +27,11 @@ validate() {
   dc config --quiet
 }
 start() {
+  python3 "$P/validate.py" --permissions "$P"
   python3 "$P/validate.py" --network "$P"
   # First run builds automatically. Later starts reuse the image, like prod-up.
   if ! docker image inspect itmc-oj-prod/judge:local >/dev/null 2>&1; then dc build judge; fi
-  # Check permissions as the real judge UID, not root. No chmod of shared OJ data.
+  # Verify access as the real judge UID after normalizing host bind permissions.
   dc run --rm --no-deps --entrypoint /usr/bin/setpriv judge \
     --reuid judge --regid judge --clear-groups /bin/sh -c \
     'test -r /problems && test -x /problems && test -r /judge/.docker/judge.yml' || {

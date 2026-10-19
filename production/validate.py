@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 import re
+import stat
 import subprocess
 import sys
 
@@ -36,6 +37,25 @@ def initialize(root):
             text = text.rstrip() + '\n' + key + '=' + value + '\n'
     if updates:
         path.write_text(text)
+    prepare_permissions(root, require_problems=False)
+
+
+def prepare_permissions(root, require_problems=True):
+    """Repair only the exact bind roots/config; never recurse or change env content."""
+    values = read(root / 'judge.env')
+    problems = Path(values['OJ_PROBLEMS_DIR'])
+    targets = [(root / 'judge.env', 0o600), (root / 'config/judge.yml', 0o644)]
+    if problems.is_dir():
+        targets.append((problems, 0o755))
+    elif require_problems:
+        raise ValueError('OJ_PROBLEMS_DIR is missing; start OJ production first')
+    for path, mode in targets:
+        try:
+            if stat.S_IMODE(path.stat().st_mode) != mode:
+                path.chmod(mode)
+        except OSError as error:
+            raise ValueError('Cannot set %o permissions on %s; run chmod %o on this exact path '
+                             'as its owner, then retry make prod.' % (mode, path, mode)) from error
 
 
 def validate(root, network=False):
@@ -72,6 +92,9 @@ if __name__ == '__main__':
         action = sys.argv[1]
         if action == '--init':
             initialize(Path(sys.argv[2]))
+        elif action == '--permissions':
+            prepare_permissions(Path(sys.argv[2]))
+            print('Judge bind permissions ready: problems=755, config=644, env=600.')
         else:
             validate(Path(sys.argv[2] if action == '--network' else action), action == '--network')
     except (ValueError, OSError) as error:
