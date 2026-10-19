@@ -1,4 +1,5 @@
-ARG BASE_IMAGE=vnoj/judge-tier1@sha256:ab9406869defe9e3cebb6cea12b91826982d82afb5d1636ba77ffb282af9785f
+# Public VNOJ judge image; the previous vnoj/judge-tier1 repository is unavailable.
+ARG BASE_IMAGE=vnoj/judge-tiervnoj@sha256:8c98a2be3bd755ba9532d069316c5190bcf86f4ac742001b168f783e8268b548
 FROM ${BASE_IMAGE}
 
 USER root

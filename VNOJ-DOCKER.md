@@ -1,6 +1,11 @@
 # Judge image cho VNOJ
 
-Build source local (Linux amd64, tier1 runtimes):
+Base image hiện dùng public `vnoj/judge-tiervnoj` với digest pin trong Dockerfile.
+Repository `vnoj/judge-tier1` cũ không còn truy cập được. Với production dùng
+`make prod-init`, chỉnh `production/judge.env`, đăng ký name/key bên OJ rồi
+`make prod`; xem `PRODUCTION.md`.
+
+Build source local (Linux amd64, VNOJ runtimes):
 
 ```powershell
 docker build -t vnoj/judge-server:local .
@@ -29,7 +34,7 @@ Launcher giữ multiprocessing `fork`, cần cho cache runtime/problem trên Pyt
 `../ITMC-OJ-docker/dmoj/problems`. Judge cần quyền đọc các file này.
 
 Kiểm tra judge online tại trang trạng thái VNOJ, sau đó gửi submission
-cho bài có test data. Image chỉ hỗ trợ ngôn ngữ có trong tier1;
+cho bài có test data. Image hỗ trợ các runtime khả dụng trong base VNOJ;
 xem runtime khởi tạo thành công trong log. Không bỏ qua executor self-test.
 
 Compose nạp `/judge/.docker/judge.yml`, khai báo `problem_storage_globs`

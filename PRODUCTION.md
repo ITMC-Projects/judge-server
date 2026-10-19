@@ -6,8 +6,11 @@ qua Docker network, không qua HTTPS domain. Không cần mở cổng 9999 ra In
 
 ## Khởi tạo
 
-Cần Docker Engine, Compose plugin, GNU Make, Bash, OpenSSL và Python 3. Image tier1
-hiện dùng base Linux amd64; cần kiểm chứng riêng nếu VPS khác kiến trúc.
+Cần Docker Engine, Compose plugin, GNU Make, Bash, OpenSSL và Python 3. Image judge
+hiện dùng base VNOJ `judge-tiervnoj`, pin multi-platform digest trong Dockerfile.
+Registry cung cấp amd64/arm64; native extensions vẫn cần build/test trên kiến trúc VPS.
+Dockerfile hiện đặt DMOJ_TARGET_ARCH=x86-64; workflow này được build kiểm chứng trên
+Linux amd64, không khẳng định hỗ trợ ARM chỉ dựa trên manifest của base.
 
 ```bash
 cd ~
@@ -103,6 +106,11 @@ OJ, còn judge key/config phải lưu trong kho bảo mật riêng.
 ## Lỗi thường gặp
 
 * Network unavailable: OJ chưa start, khác Docker host/context hoặc OJ_NETWORK sai.
+* Pull access denied cho `vnoj/judge-tier1`: Dockerfile cũ trỏ image không truy cập
+  được. Chạy `git pull --ff-only`, rồi `make prod` (hoặc prod-build nếu đã có image).
+  Dockerfile mới dùng public `vnoj/judge-tiervnoj`, pin digest đã kiểm tra registry.
+  Lần đầu cần tải base image lớn hơn tier1 cũ và đủ dung lượng đĩa. Không sửa judge key
+  hoặc OTS tokens để xử lý lỗi pull image; bước này chưa kết nối tới OJ.
 * Connection refused/DNS: kiểm tra `make prod-logs SERVICE=bridged` phía OJ, bridge
   hostname và port 9999. Không dùng hostname dev `vnoj_bridged` cho production.
 * Authentication failed: so sánh name/key với OJ Admin, bật cho phép kết nối; không
@@ -130,6 +138,10 @@ validation từ chối placeholder/key yếu/path thiếu, và Compose contract 
 port, mount đúng read-only/network production. `bash -n scripts/prod.sh`, `make`,
 `make -n prod` cũng được kiểm tra trong môi trường phát triển.
 
-Docker daemon tại môi trường thực hiện không chạy: chưa build image hoặc kiểm chứng
-runtime, ACL thực tế, authentication và grading trên VPS. Các kiểm tra trên không
-thay thế việc chạy judge thật và gửi submission trên staging/production của bạn.
+Sau bản sửa base image, đã kiểm chứng registry manifest của digest mới và chạy thành
+công `docker build -t itmc-oj-prod/judge:local .` trên Docker Linux amd64, gồm native
+extensions Python 3.14. Ba test cấu hình, Bash syntax và diff check đều pass.
+Container test grading và cả smoke test chỉ chạy `/bin/true` bị Docker Desktop giữ
+ở trạng thái Created, chưa có process/log. Vì vậy chưa kiểm chứng runtime, ACL thực
+tế, authentication hoặc grading; cần chạy lại trên VPS. Không coi build thành công
+là đã xác nhận judge online/chấm đúng.
